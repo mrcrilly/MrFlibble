@@ -5,6 +5,8 @@
   become: true
   connection: local
   gather_facts: false
+  vars:
+    mrflibble_git_respository: https://github.com/mrcrilly/MrFlibble.git
   tasks:
     - name: Update everything
       yum:
@@ -64,15 +66,16 @@
       tags:
         - fail2ban
 
+    - name: Install Ansible cronjob 
+      cron:
+        name: "Ansible Pull"
+        minute: "*/10"
+        job: "ansible-pull flibble.yaml -U {{mrflibble_git_respository}} -f --clean --accept-host-key -i localhost, -e mrflibble_letsencrypt_email={{mrflibble_letsencrypt_email}} -e mrflibble_domain_name={{mrflibble_domain_name}}"
+
     - name: Create the Let's Encrypt Directory
       file:
         name: /var/www/letsencrypt
         state: directory
-
-    # - name: Remove default Nginx Configuration
-    #   file:
-    #     name: /etc/nginx/sites-enabled/default
-    #     state: absent
 
     - name: Install our NginX Configuration
       template:
@@ -85,7 +88,7 @@
         dest: /etc/nginx/conf.d/http.conf
 
     - name: Create Lets' Encrypt Certificate
-      shell: letsencrypt certonly -n --webroot -w /var/www/letsencrypt -m {{ mrflibble_letsencrypt_email }} --agree-tos -d {{ mrflibble_domain_name }}
+      shell: "letsencrypt certonly -n --webroot -w /var/www/letsencrypt -m {{ mrflibble_letsencrypt_email }} --agree-tos -d {{ mrflibble_domain_name }}"
       args:
         creates: /etc/letsencrypt/live/{{ mrflibble_domain_name }}
 
@@ -109,4 +112,4 @@
       cron:
         name: letsencrypt_renewal
         special_time: weekly
-        job: letsencrypt --renew certonly -n --webroot -w /var/www/letsencrypt -m {{ mrflibble_letsencrypt_email }} --agree-tos -d {{ mrflibble_domain_name }} && service nginx reload
+        job: "letsencrypt --renew certonly -n --webroot -w /var/www/letsencrypt -m {{ mrflibble_letsencrypt_email }} --agree-tos -d {{ mrflibble_domain_name }} && service nginx reload"
