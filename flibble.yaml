@@ -65,6 +65,3 @@
         enabled: true
       tags:
         - fail2ban
-
-    - name: Install Gogs
-      unarchive:
