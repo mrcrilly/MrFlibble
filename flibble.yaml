@@ -87,6 +87,12 @@
         src: templates/nginx-http.j2
         dest: /etc/nginx/conf.d/http.conf
 
+    - name: Start NginX to get certificate 
+      service:
+        name: nginx 
+        state: started 
+        enabled: true
+
     - name: Create Lets' Encrypt Certificate
       shell: "letsencrypt certonly -n --webroot -w /var/www/letsencrypt -m {{ mrflibble_letsencrypt_email }} --agree-tos -d {{ mrflibble_domain_name }}"
       args:
