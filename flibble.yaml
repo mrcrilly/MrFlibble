@@ -11,7 +11,7 @@
     - name: Update everything
       yum:
         name: "*"
-        state: latest
+        state: present
       tags:
         - os-update
 
@@ -43,7 +43,7 @@
     - name: Install packages
       yum:
         name: "{{item}}"
-        state: latest
+        state: present
       with_items:
         - vim
         - screen

@@ -50,6 +50,6 @@ resource "digitalocean_domain" "mrflibble_domain" {
 resource "digitalocean_record" "mrflibble_a_record" {
   domain = "${digitalocean_domain.mrflibble_domain.id}"
   type = "A"
-  name = "${var.mrflibble_subdomain_name}.${digitalocean_domain.mrflibble_domain.name}"
+  name = "${var.mrflibble_subdomain_name}.${var.mrflibble_domain_name}"
   value = "${digitalocean_floating_ip.mrflibble_fip.ip_address}"
 }
