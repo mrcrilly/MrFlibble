@@ -69,10 +69,10 @@
         name: /var/www/letsencrypt
         state: directory
 
-    - name: Remove default Nginx Configuration
-      file:
-        name: /etc/nginx/sites-enabled/default
-        state: absent
+    # - name: Remove default Nginx Configuration
+    #   file:
+    #     name: /etc/nginx/sites-enabled/default
+    #     state: absent
 
     - name: Install our NginX Configuration
       template:
@@ -82,7 +82,7 @@
     - name: Configure Let's Encrypt Website into NginX
       template:
         src: templates/nginx-http.j2
-        dest: /etc/nginx/sites-enabled/http
+        dest: /etc/nginx/conf.d/http.conf
 
     - name: Create Lets' Encrypt Certificate
       shell: letsencrypt certonly -n --webroot -w /var/www/letsencrypt -m {{ mrflibble_letsencrypt_email }} --agree-tos -d {{ mrflibble_domain_name }}
@@ -97,7 +97,7 @@
     - name: Install our Gogs HTTPS NginX configuration
       template:
         src: templates/nginx-lets-encrypt.j2
-        dest: /etc/nginx/sites-enabled/gogs-lets-encrypt
+        dest: /etc/nginx/conf.d/gogs-lets-encrypt.conf
 
     - name: Reload NginX
       service:

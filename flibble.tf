@@ -1,7 +1,14 @@
 provider "digitalocean" {}
 
+variable "mrflibble_letsencrypt_email" {}
+variable "mrflibble_domain_name" {}
+
 data "template_file" "flibble_shell_script" {
   template = "${file("${path.module}/flibble.sh")}"
+  vars {
+    mrflibble_letsencrypt_email = "${var.mrflibble_letsencrypt_email}"
+    mrflibble_domain_name = "${var.mrflibble_domain_name}"
+  }
 }
 
 resource "digitalocean_droplet" "flibble" {
