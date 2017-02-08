@@ -1,0 +1,70 @@
+---
+
+- name: Setup Flibble
+  hosts: all
+  become: true
+  connection: local
+  tasks:
+    - name: Update everything
+      yum:
+        name: "*"
+        state: latest
+      tags:
+        - os-update
+
+    - name: Install EPEL & IUS
+      yum:
+        name: "{{item}}"
+        state: present
+      with_items:
+        - epel-release
+        - https://centos7.iuscommunity.org/ius-release.rpm
+      tags:
+        - extra-packages
+
+    - name: Install Packager.IO Repository
+      copy:
+        content: |
+          [gogs]
+          name=Repository for pkgr/gogs application.
+          baseurl=https://rpm.packager.io/gh/pkgr/gogs/centos7/pkgr
+          enabled=1
+        dest: /etc/yum.repos.d/gogs.repo
+
+    - name: Add Packager.IO GPG Key
+      rpm_key:
+        key: https://rpm.packager.io/key
+        state: present
+
+    - name: Remove the older git version 
+      yum:
+        name: git 
+        state: absent
+
+    - name: Install packages
+      yum:
+        name: "{{item}}"
+        state: latest
+      with_items:
+        - vim
+        - screen
+        - irssi
+        - htop
+        - fail2ban
+        - sqlite
+        - nginx
+        - git2u  # from IUS
+        - gogs  # from Packager.io
+      tags:
+        - packages
+
+    - name: Start Fail2Ban 
+      service:
+        name: fail2ban
+        state: started
+        enabled: true
+      tags:
+        - fail2ban
+
+    - name: Install Gogs
+      unarchive:
