@@ -4,6 +4,7 @@
   hosts: all
   become: true
   connection: local
+  gather_facts: false
   tasks:
     - name: Update everything
       yum:
@@ -24,11 +25,7 @@
 
     - name: Install Packager.IO Repository
       copy:
-        content: |
-          [gogs]
-          name=Repository for pkgr/gogs application.
-          baseurl=https://rpm.packager.io/gh/pkgr/gogs/centos7/pkgr
-          enabled=1
+        src: gogs.repo
         dest: /etc/yum.repos.d/gogs.repo
 
     - name: Add Packager.IO GPG Key
@@ -53,6 +50,7 @@
         - fail2ban
         - sqlite
         - nginx
+        - certbot
         - git2u  # from IUS
         - gogs  # from Packager.io
       tags:
@@ -65,3 +63,50 @@
         enabled: true
       tags:
         - fail2ban
+
+    - name: Create the Let's Encrypt Directory
+      file:
+        name: /var/www/letsencrypt
+        state: directory
+
+    - name: Remove default Nginx Configuration
+      file:
+        name: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Install our NginX Configuration
+      template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+
+    - name: Configure Let's Encrypt Website into NginX
+      template:
+        src: templates/nginx-http.j2
+        dest: /etc/nginx/sites-enabled/http
+
+    - name: Create Lets' Encrypt Certificate
+      shell: letsencrypt certonly -n --webroot -w /var/www/letsencrypt -m {{ mrflibble_letsencrypt_email }} --agree-tos -d {{ mrflibble_domain_name }}
+      args:
+        creates: /etc/letsencrypt/live/{{ mrflibble_domain_name }}
+
+    - name: Generate dhparams for NginX
+      shell: openssl dhparam -out /etc/nginx/dhparams.pem 2048
+      args:
+        creates: /etc/nginx/dhparams.pem
+
+    - name: Install our Gogs HTTPS NginX configuration
+      template:
+        src: templates/nginx-lets-encrypt.j2
+        dest: /etc/nginx/sites-enabled/gogs-lets-encrypt
+
+    - name: Reload NginX
+      service:
+        name: nginx
+        state: restarted
+        enabled: true
+
+    - name: Let's Encrypt Certificate Renewel Cronjob
+      cron:
+        name: letsencrypt_renewal
+        special_time: weekly
+        job: letsencrypt --renew certonly -n --webroot -w /var/www/letsencrypt -m {{ mrflibble_letsencrypt_email }} --agree-tos -d {{ mrflibble_domain_name }} && service nginx reload
